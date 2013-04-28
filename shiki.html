@@ -1,0 +1,208 @@
+<html lang="ja">
+<head>
+	<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
+	<title>しきぶとん</title>
+	<style type="text/css">
+		h1 > em {
+			color: red;
+		}
+		#bed {
+			position: relative;
+			width: 200px;
+			height: 350px;
+		}
+		#people, #shiki {
+			position: absolute;
+		}
+		#shiki {
+			top: 20px;
+		}
+		#people {
+			z-index: 2;
+			left: 40px;
+			top: 70px;
+		}
+		.alert {
+			background: rgba(255, 0, 0, 0.2);
+			position: absolute;
+			z-index: 1;
+			display: none;
+		}
+		#right {
+			width: 50px;
+			height: 300px;
+			left: 150px;
+		}
+		#left {
+			width: 50px;
+			height: 300px;
+		}
+		#down {
+			width: 200px;
+			height: 50px;
+			top: 250px;
+		}
+	</style>
+</head>
+<body>
+
+<h1><em>しき</em>ぶとん</h1>
+
+<div id="game">
+	<div>
+		残り<time id="time"></time>秒
+	</div>
+
+	<div id="bed">
+		<img id="people" src="people.png">
+		<img id="shiki" src="shiki-normal.png">
+		<div id="right" class="alert"></div>
+		<div id="left" class="alert"></div>
+		<div id="down" class="alert"></div>
+	</div>
+</div>
+
+
+<button id="start">スタート</button>
+
+<script>
+// oh... i cant read this code
+
+var gameOverTimers = {};
+var shikiTimer = null;
+var shiki = document.getElementById("shiki");
+var isGameOver = false;
+var alerts = {};
+document.addEventListener("keydown", function(event) {
+	if (shikiTimer || isGameOver) {
+		return;
+	}
+
+	var d = ({37: "left", 39: "right", 40: "down"})[event.keyCode];
+	if (d) {
+		shiki.src = "shiki-"+d+".png";
+		window.clearTimeout(gameOverTimers[d]);
+		gameOverTimers[d] = null;
+		alerts[d].style.display = "none";
+	}
+
+	shikiTimer = window.setTimeout(function() {
+		shiki.src = "shiki-normal.png";
+		shikiTimer = null;
+	}, 300);
+});
+
+document.getElementById("start").addEventListener("click", function() {
+	var game = document.getElementById("game");
+	var bed = document.getElementById("bed");
+	var time = document.getElementById("time");
+	var people = document.getElementById("people");
+
+	time.innerText = 30;
+	var timer = window.setInterval(function() {
+		if (--time.innerText === 0) {
+			gameOver(true);
+		}
+	}, 1000);
+
+	var shikiTimer = null;
+	document.addEventListener("keydown", function(event) {
+		if (shikiTimer || isGameOver) {
+			return;
+		}
+
+		var d = ({37: "left", 39: "right", 40: "down"})[event.keyCode];
+		if (d) {
+			shiki.src = "shiki-"+d+".png";
+			window.clearTimeout(gameOverTimers[d]);
+			gameOverTimers[d] = null;
+			alerts[d].style.display = "none";
+		}
+
+		shikiTimer = window.setTimeout(function() {
+			shiki.src = "shiki-normal.png";
+			shikiTimer = null;
+		}, 300);
+	});
+
+	var direction = null;
+	var gameTimer = window.setInterval(function() {
+		var d = direction = (["left", "right", "down"])[Math.floor(Math.random()*3)];
+		if (gameOverTimers[d] || isGameOver) {
+			return;
+		}
+
+		alerts[d] = document.getElementById(direction);
+		gameOverTimers[d] = setTimeout(function() {
+			gameOver(false, d);
+		}, 500);
+
+		alerts[d].style.display = "block";
+	}, 500);
+
+	var gameOver = function(clear, d) {
+		if (isGameOver) {
+			return;
+		}
+		isGameOver = true;
+		window.clearInterval(timer);
+		window.clearInterval(gameTimer);
+		for (dir in alerts) {
+			alerts[dir].style.display = "none";
+		}
+		if (d) {
+			alerts[d].style.display = "block";
+		}
+
+		if (clear) {
+			window.alert("爽やかな朝を迎えた");
+		} else {
+			window.setTimeout(function() {
+				location.reload();
+			}, 1000);
+			switch (d) {
+				case "left":
+					var left = 40;
+					window.setInterval(function() {
+						left -= 7;
+						people.style.left = left+"px";
+					}, 1000/60);
+					break;
+				case "down":
+					var rotate = 0;
+					window.setInterval(function() {
+						rotate += 30;
+						people.style["-webkit-transform"] = "rotate("+rotate+"deg)";
+					}, 1000/60);
+					break;
+				case "right":
+					bed.style.width = "100px";
+					bed.style.overflow = "hidden";
+
+					var bedClone = bed.cloneNode();
+					var peopleClone = people.cloneNode();
+					var shikiClone = shiki.cloneNode();
+					shikiClone.style.zIndex = 3;
+					peopleClone.style.zIndex = 4;
+					bedClone.appendChild(peopleClone);
+					bedClone.appendChild(shikiClone);
+					game.appendChild(bedClone);
+					bedClone.style.left = "100px";
+					shikiClone.style.left = "-100px";
+					peopleClone.style.left = "-60px";
+					var top = -350;
+					var rightTimer = window.setInterval(function() {
+						if (top > 150) {
+							window.clearInterval(rightTimer);
+						}
+						top += 7;
+						bedClone.style.top = top+"px";
+					}, 1000/60);
+			}
+		}
+	};
+});
+</script>
+
+</body>
+</html>
